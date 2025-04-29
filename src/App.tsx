@@ -10,164 +10,294 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  Checkbox,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Slider,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
 
-interface Todo {
+interface Ingredient {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+interface Recipe {
   id: number;
-  text: string;
-  done: boolean;
+  name: string;
+  ingredients: Ingredient[];
+  instructions: string[];
+  portions: number;
 }
 
 const AppContainer = styled.div`
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+  min-height: 100vh;
+`;
+
+const Header = styled.div`
   text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #ff8c42;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const StyledCard = styled(Card)`
+  && {
+    margin: 1rem;
+    background: white;
+    border-radius: 15px;
+    transition: transform 0.2s;
+    &:hover {
+      transform: translateY(-5px);
+    }
+  }
 `;
 
 const StyledButton = styled(Button)`
   && {
-    margin-top: 1rem;
+    margin: 0.5rem;
+    background: #ff8c42;
+    &:hover {
+      background: #ff6b1a;
+    }
   }
 `;
 
-const StyledListItemText = styled(ListItemText)<{ done: boolean }>`
-  && {
-    text-decoration: ${(props) => (props.done ? "line-through" : "none")};
-  }
+const PortionSlider = styled.div`
+  margin: 1rem 0;
+  padding: 0 1rem;
 `;
 
 function App() {
-  const [todos, setTodos] = useLocalStorageState<Todo[]>("todos", {
+  const [recipes, setRecipes] = useLocalStorageState<Recipe[]>("recipes", {
     defaultValue: [],
   });
-  const [newTodo, setNewTodo] = useState("");
+  const [newRecipe, setNewRecipe] = useState<Partial<Recipe>>({
+    name: "",
+    ingredients: [{ name: "", amount: 0, unit: "" }],
+    instructions: [""],
+    portions: 1,
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editText, setEditText] = useState(""); // Add this line
 
   useEffect(() => {
-    if (todos.length === 0) {
-      const boilerplateTodos = [
-        { id: 1, text: "Install Node.js", done: false },
-        { id: 2, text: "Install Cursor IDE", done: false },
-        { id: 3, text: "Log into Github", done: false },
-        { id: 4, text: "Fork a repo", done: false },
-        { id: 5, text: "Make changes", done: false },
-        { id: 6, text: "Commit", done: false },
-        { id: 7, text: "Deploy", done: false },
+    if (recipes.length === 0) {
+      const boilerplateRecipes: Recipe[] = [
+        {
+          id: 1,
+          name: "Spaghetti Carbonara",
+          ingredients: [
+            { name: "Spaghetti", amount: 400, unit: "g" },
+            { name: "Eggs", amount: 4, unit: "pcs" },
+            { name: "Pancetta", amount: 200, unit: "g" },
+            { name: "Parmesan", amount: 100, unit: "g" },
+          ],
+          instructions: [
+            "Cook spaghetti according to package instructions",
+            "Fry pancetta until crispy",
+            "Mix eggs with grated parmesan",
+            "Combine everything and serve hot",
+          ],
+          portions: 4,
+        },
+        {
+          id: 2,
+          name: "Chocolate Chip Cookies",
+          ingredients: [
+            { name: "Flour", amount: 250, unit: "g" },
+            { name: "Butter", amount: 200, unit: "g" },
+            { name: "Sugar", amount: 150, unit: "g" },
+            { name: "Chocolate chips", amount: 200, unit: "g" },
+          ],
+          instructions: [
+            "Mix butter and sugar",
+            "Add flour and chocolate chips",
+            "Bake at 180°C for 12 minutes",
+          ],
+          portions: 24,
+        },
+        {
+          id: 3,
+          name: "Vegetable Stir Fry",
+          ingredients: [
+            { name: "Rice", amount: 300, unit: "g" },
+            { name: "Mixed vegetables", amount: 500, unit: "g" },
+            { name: "Soy sauce", amount: 50, unit: "ml" },
+            { name: "Garlic", amount: 3, unit: "cloves" },
+          ],
+          instructions: [
+            "Cook rice",
+            "Stir fry vegetables with garlic",
+            "Add soy sauce and serve with rice",
+          ],
+          portions: 2,
+        },
+        {
+          id: 4,
+          name: "Greek Salad",
+          ingredients: [
+            { name: "Cucumber", amount: 1, unit: "pc" },
+            { name: "Tomatoes", amount: 4, unit: "pcs" },
+            { name: "Feta cheese", amount: 200, unit: "g" },
+            { name: "Olives", amount: 100, unit: "g" },
+          ],
+          instructions: [
+            "Chop vegetables",
+            "Add feta and olives",
+            "Drizzle with olive oil",
+          ],
+          portions: 4,
+        },
+        {
+          id: 5,
+          name: "Smoothie Bowl",
+          ingredients: [
+            { name: "Bananas", amount: 2, unit: "pcs" },
+            { name: "Mixed berries", amount: 200, unit: "g" },
+            { name: "Yogurt", amount: 200, unit: "g" },
+            { name: "Granola", amount: 100, unit: "g" },
+          ],
+          instructions: [
+            "Blend fruits with yogurt",
+            "Pour into bowl",
+            "Top with granola",
+          ],
+          portions: 2,
+        },
       ];
-      setTodos(boilerplateTodos);
+      setRecipes(boilerplateRecipes);
     }
-  }, [todos, setTodos]);
+  }, [recipes, setRecipes]);
 
-  const handleAddTodo = () => {
-    if (newTodo.trim() !== "") {
-      setTodos([
-        ...todos,
-        { id: Date.now(), text: newTodo.trim(), done: false },
+  const handleAddRecipe = () => {
+    if (newRecipe.name && newRecipe.ingredients && newRecipe.instructions) {
+      setRecipes([
+        ...recipes,
+        {
+          id: Date.now(),
+          name: newRecipe.name,
+          ingredients: newRecipe.ingredients,
+          instructions: newRecipe.instructions,
+          portions: newRecipe.portions || 1,
+        },
       ]);
-      setNewTodo("");
+      setNewRecipe({
+        name: "",
+        ingredients: [{ name: "", amount: 0, unit: "" }],
+        instructions: [""],
+        portions: 1,
+      });
     }
   };
 
-  const handleDeleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  const handleDeleteRecipe = (id: number) => {
+    setRecipes(recipes.filter((recipe) => recipe.id !== id));
   };
 
-  const handleToggleTodo = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
+  const handleEditRecipe = (id: number) => {
+    setEditingId(id);
+  };
+
+  const handleUpdatePortions = (id: number, newPortions: number) => {
+    setRecipes(
+      recipes.map((recipe) =>
+        recipe.id === id
+          ? {
+              ...recipe,
+              portions: newPortions,
+              ingredients: recipe.ingredients.map((ing) => ({
+                ...ing,
+                amount: (ing.amount * newPortions) / recipe.portions,
+              })),
+            }
+          : recipe
       )
     );
   };
 
-  const handleEditTodo = (id: number) => {
-    setEditingId(id);
-    const todoToEdit = todos.find((todo) => todo.id === id);
-    if (todoToEdit) {
-      setEditText(todoToEdit.text);
-    }
-  };
-
-  const handleUpdateTodo = (id: number) => {
-    if (editText.trim() !== "") {
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, text: editText.trim() } : todo
-        )
-      );
-    }
-    setEditingId(null);
-    setEditText("");
-  };
-
   return (
     <AppContainer>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Todo List
-      </Typography>
-      <TextField
-        fullWidth
-        variant="outlined"
-        label="New Todo"
-        value={newTodo}
-        onChange={(e) => setNewTodo(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && handleAddTodo()}
-        autoFocus // Add this line to enable autofocus
-      />
-      <StyledButton
-        variant="contained"
-        color="primary"
-        fullWidth
-        onClick={handleAddTodo}
-      >
-        Add Todo
-      </StyledButton>
-      <List>
-        {todos.map((todo) => (
-          <ListItem key={todo.id} dense>
-            <Checkbox
-              edge="start"
-              checked={todo.done}
-              onChange={() => handleToggleTodo(todo.id)}
-            />
-            {editingId === todo.id ? (
-              <TextField
-                fullWidth
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                onBlur={() => handleUpdateTodo(todo.id)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && handleUpdateTodo(todo.id)
-                }
-                autoFocus
-              />
-            ) : (
-              <StyledListItemText primary={todo.text} done={todo.done} />
-            )}
-            <ListItemSecondaryAction>
-              <IconButton
-                edge="end"
-                aria-label="edit"
-                onClick={() => handleEditTodo(todo.id)}
-              >
-                <EditIcon />
-              </IconButton>
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={() => handleDeleteTodo(todo.id)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
+      <Header>
+        <Typography variant="h3" component="h1" gutterBottom>
+          <RestaurantIcon fontSize="large" /> Recipe Manager
+        </Typography>
+      </Header>
+
+      <Grid container spacing={3}>
+        {recipes.map((recipe) => (
+          <Grid item xs={12} sm={6} md={4} key={recipe.id}>
+            <StyledCard>
+              <CardContent>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  {recipe.name}
+                </Typography>
+                <Typography variant="h6" gutterBottom>
+                  Ingredients:
+                </Typography>
+                <List>
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={`${ingredient.amount.toFixed(1)} ${
+                          ingredient.unit
+                        } ${ingredient.name}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                <Typography variant="h6" gutterBottom>
+                  Instructions:
+                </Typography>
+                <List>
+                  {recipe.instructions.map((instruction, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={`${index + 1}. ${instruction}`} />
+                    </ListItem>
+                  ))}
+                </List>
+                <PortionSlider>
+                  <Typography gutterBottom>Portions: {recipe.portions}</Typography>
+                  <Slider
+                    value={recipe.portions}
+                    onChange={(_, value) =>
+                      handleUpdatePortions(recipe.id, value as number)
+                    }
+                    min={1}
+                    max={10}
+                    step={1}
+                  />
+                </PortionSlider>
+              </CardContent>
+              <CardActions>
+                <IconButton
+                  edge="end"
+                  aria-label="edit"
+                  onClick={() => handleEditRecipe(recipe.id)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleDeleteRecipe(recipe.id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </CardActions>
+            </StyledCard>
+          </Grid>
         ))}
-      </List>
+      </Grid>
     </AppContainer>
   );
 }
